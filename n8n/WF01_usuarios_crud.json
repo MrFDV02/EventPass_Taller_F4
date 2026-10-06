@@ -1,0 +1,1591 @@
+{
+  "name": "WF01_usuarios_crud",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "eventpass/usuarios",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://event-pass-taller-f4.vercel.app"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b565973b-81e6-435d-9d02-8157d134ea8a",
+      "name": "Webhook Usuarios",
+      "webhookId": "82f61d04-f51b-48b5-a97f-2b32ac03cc7d"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        0
+      ],
+      "id": "7bbe64fb-49fb-4994-aa64-c86a7fb70eec",
+      "name": "Leer usuarios",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const datos = $('Validar y normalizar').first().json;\nconst filas = $('Leer usuarios').all().map(i => i.json).filter(r => r.usuario_id);\nconst sesiones = $('Leer sesiones').all().map(i => i.json).filter(r => r.session_token);\n\nlet error = datos.error;\nlet status = datos.status;\n\nif (!error && datos.operacion !== 'crear') {\n  const s = sesiones.find(r => r.session_token === datos.session_token);\n  const vigente = s && String(s.estado).toUpperCase() === 'ACTIVA' && new Date(s.expira_en).getTime() > Date.now();\n  if (!vigente || s.usuario_id !== datos.usuario_id) {\n    error = 'sesion invalida o expirada';\n    status = 401;\n  }\n}\n\nlet usuario = null;\nif (datos.operacion === 'crear') {\n  usuario = filas.find(r => r.email_normalizado === datos.email_normalizado) || null;\n} else if (datos.usuario_id) {\n  usuario = filas.find(r => r.usuario_id === datos.usuario_id) || null;\n}\n\nconst max = filas.reduce((m, r) => Math.max(m, parseInt(String(r.usuario_id).split('-')[1], 10) || 0), 0);\nconst nuevoId = 'USR-' + String(max + 1).padStart(4, '0');\n\nreturn [{ json: {\n  ...datos,\n  error,\n  status,\n  existe: !!usuario,\n  usuario_actual: usuario,\n  nuevo_usuario_id: nuevoId,\n  ahora: new Date().toISOString()\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "75ed251d-9f51-4de9-b32f-775c11b1a070",
+      "name": "Resolver contexto"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76cd1353-79d3-4e93-87ae-267d4a2bae64",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        16
+      ],
+      "id": "2afecee0-595a-4dba-a63e-3fe5bd8f9bd3",
+      "name": "¿Hay error?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": false, \"error\": $json.error } }}",
+        "options": {
+          "responseCode": "={{ $json.status }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        -400
+      ],
+      "id": "893745cf-6776-4932-bc5a-a05b654b0687",
+      "name": "Responder error"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operacion }}",
+                    "rightValue": "crear",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "26cc9638-97e6-4d84-80bb-9046159f150d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "crear"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3db62074-218b-4a70-a3c2-91865bc88abc",
+                    "leftValue": "={{ $json.operacion }}",
+                    "rightValue": "perfil",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "perfil"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a0f3934c-10b9-45c9-ab5d-b29a216fa16b",
+                    "leftValue": "={{ $json.operacion }}",
+                    "rightValue": "actualizar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "actualizar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "16c85133-547e-4ceb-baa7-8b609566f92c",
+                    "leftValue": "={{ $json.operacion }}",
+                    "rightValue": "desactivar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "desactivar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        352
+      ],
+      "id": "8691895f-6fbd-4af8-8377-2edc4549b273",
+      "name": "Según operación"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d01f4287-8421-4d04-8727-7044eb3e035b",
+              "leftValue": "={{ $json.existe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1536,
+        16
+      ],
+      "id": "2208d997-702b-43d7-ba0e-c06a49213c95",
+      "name": "¿Email ya existe?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": false, \"error\": \"El email ya esta registrado\" } }}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1744,
+        -128
+      ],
+      "id": "b086068f-decc-4e70-a20f-9ee320a5093d",
+      "name": "Responder 409"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst d = $input.first().json;\n\nconst salt = crypto.randomBytes(16).toString('hex');\nconst hash = crypto.pbkdf2Sync(String(d.password), salt, 100000, 64, 'sha512').toString('hex');\n\nreturn [{ json: {\n  ...d,\n  password: null,\n  password_hash: hash,\n  password_salt: salt\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        96
+      ],
+      "id": "7b2bd994-2926-4f75-8721-1a73cc673c7e",
+      "name": "Hash y salt"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "usuario_id": "={{ $json.nuevo_usuario_id }}",
+            "nombre": "={{ $json.nombre }}",
+            "email_normalizado": "={{ $json.email_normalizado }}",
+            "password_hash": "={{ $json.password_hash }}",
+            "password_salt": "={{ $json.password_salt }}",
+            "estado": "ACTIVO",
+            "fecha_registro": "={{ $json.ahora }}",
+            "fecha_actualizacion": "={{ $json.ahora }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_normalizado",
+              "displayName": "email_normalizado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "password_hash",
+              "displayName": "password_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "password_salt",
+              "displayName": "password_salt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_registro",
+              "displayName": "fecha_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_actualizacion",
+              "displayName": "fecha_actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1888,
+        96
+      ],
+      "id": "f6f7dfdc-28bf-4b57-ac6d-4324df29876b",
+      "name": "Crear usuario",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1459600593,
+          "mode": "list",
+          "cachedResultName": "Auditoria_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=1459600593"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "auditoria_id": "={{ 'AUD-' + Date.now() }}",
+            "usuario_id": "={{ $('Hash y salt').first().json.nuevo_usuario_id }}",
+            "accion": "CREAR",
+            "fecha": "={{ $('Hash y salt').first().json.ahora }}",
+            "resultado": "OK",
+            "detalle": "Usuario creado"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "auditoria_id",
+              "displayName": "auditoria_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accion",
+              "displayName": "accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "resultado",
+              "displayName": "resultado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2032,
+        96
+      ],
+      "id": "f560caff-6c59-4b7b-8b4b-079c6c318ca2",
+      "name": "Auditoría crear",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"data\": { \"usuario_id\": $('Hash y salt').first().json.nuevo_usuario_id, \"nombre\": $('Hash y salt').first().json.nombre, \"email\": $('Hash y salt').first().json.email_normalizado, \"estado\": \"ACTIVO\" } } }}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2176,
+        96
+      ],
+      "id": "7557dd56-0abe-4218-8c12-ee104927603d",
+      "name": "Responder 201"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body || {};\nconst op = String(b.operacion || '').toLowerCase().trim();\nconst email = String(b.email || '').toLowerCase().trim();\nconst out = { operacion: op, error: null, status: 200 };\n\nconst ops = ['crear', 'perfil', 'actualizar', 'desactivar'];\nif (!ops.includes(op)) {\n  out.error = 'operacion invalida'; out.status = 400;\n} else if (op === 'crear') {\n  if (!b.nombre || !email || !b.password) { out.error = 'nombre, email y password son obligatorios'; out.status = 400; }\n  else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { out.error = 'email invalido'; out.status = 400; }\n  else if (String(b.password).length < 8) { out.error = 'password minimo 8 caracteres'; out.status = 400; }\n} else if (!b.usuario_id) {\n  out.error = 'usuario_id es obligatorio'; out.status = 400;\n} else if (!b.session_token) {\n  out.error = 'sesion requerida'; out.status = 401;\n} else if (op === 'actualizar' && !b.nombre) {\n  out.error = 'nombre es obligatorio'; out.status = 400;\n}\n\nreturn [{ json: {\n  ...out,\n  nombre: b.nombre ? String(b.nombre).trim() : null,\n  email_normalizado: email || null,\n  password: b.password || null,\n  usuario_id: b.usuario_id || null,\n  session_token: b.session_token || null\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "06faa481-666c-419e-a14f-1b1873b5c75f",
+      "name": "Validar y normalizar"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "45d6faf2-78e4-4334-bd4c-48cb200ea775",
+              "leftValue": "={{ $json.existe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1504,
+        304
+      ],
+      "id": "1aeadf52-1a56-41d9-b96c-a0461e66c4e3",
+      "name": "¿Existe perfil?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, data: { usuario_id: $json.usuario_actual.usuario_id, nombre: $json.usuario_actual.nombre, email: $json.usuario_actual.email_normalizado, estado: $json.usuario_actual.estado, fecha_registro: $json.usuario_actual.fecha_registro, fecha_actualizacion: $json.usuario_actual.fecha_actualizacion } }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2992,
+        256
+      ],
+      "id": "cb359cfc-3650-4a59-8740-de65dadd47c0",
+      "name": "Responder perfil"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=   {{ { \"ok\": false, \"error\": \"Usuario no encontrado\" } }}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2992,
+        416
+      ],
+      "id": "ede01994-4b05-4249-9252-05166d5e07c3",
+      "name": "Responder 404 perfil"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f6d193e1-5a0b-4869-98bf-6ff738400d9b",
+              "leftValue": "={{ $json.existe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0c94a476-ad9c-47b9-a4f5-32d7c27abfd4",
+              "leftValue": "={{ $json.usuario_actual?.estado }}",
+              "rightValue": "ACTIVO",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1360,
+        496
+      ],
+      "id": "dd5709b0-69bc-4891-af28-f63ec6f5931a",
+      "name": "¿Existe y activo?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=   {{ { \"ok\": false, \"error\": \"Usuario no encontrado o inactivo\" } }}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1552,
+        640
+      ],
+      "id": "e74f63ed-92d4-4833-812f-19a33ec65097",
+      "name": "Responder 404 actualizar"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst d = $input.first().json;\n\nlet hash = d.usuario_actual.password_hash;\nlet salt = d.usuario_actual.password_salt;\n\nif (d.password) {\n  salt = crypto.randomBytes(16).toString('hex');\n  hash = crypto.pbkdf2Sync(String(d.password), salt, 100000, 64, 'sha512').toString('hex');\n}\n\nreturn [{ json: {\n  ...d,\n  password: null,\n  password_hash: hash,\n  password_salt: salt\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        448
+      ],
+      "id": "71ff31bb-8bf4-424d-ae4c-1151763a0bd4",
+      "name": "Preparar actualización"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "usuario_id": "={{ $json.usuario_id }}",
+            "nombre": "={{ $json.nombre }}",
+            "password_hash": "={{ $json.password_hash }}",
+            "password_salt": "={{ $json.password_salt }}",
+            "fecha_actualizacion": "={{ $json.ahora }}"
+          },
+          "matchingColumns": [
+            "usuario_id"
+          ],
+          "schema": [
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_normalizado",
+              "displayName": "email_normalizado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "password_hash",
+              "displayName": "password_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "password_salt",
+              "displayName": "password_salt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_registro",
+              "displayName": "fecha_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_actualizacion",
+              "displayName": "fecha_actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1872,
+        448
+      ],
+      "id": "57baa1ec-19c4-4994-ae20-73d7f33ac43c",
+      "name": "Actualizar usuario",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1459600593,
+          "mode": "list",
+          "cachedResultName": "Auditoria_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=1459600593"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "auditoria_id": "={{ 'AUD-' + Date.now() }}",
+            "usuario_id": "={{ $('Preparar actualización').first().json.usuario_id }}",
+            "accion": "ACTUALIZAR",
+            "fecha": "={{ $('Preparar actualización').first().json.ahora }}",
+            "resultado": "=OK",
+            "detalle": "=Perfil actualizado"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "auditoria_id",
+              "displayName": "auditoria_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accion",
+              "displayName": "accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "resultado",
+              "displayName": "resultado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2016,
+        448
+      ],
+      "id": "184fc221-debf-41da-b141-5e091f204c82",
+      "name": "Auditoría actualizar",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, data: { usuario_id: $('Preparar actualización').first().json.usuario_id, nombre: $('Preparar actualización').first().json.nombre, email: $('Preparar actualización').first().json.usuario_actual.email_normalizado, estado: \"ACTIVO\" } }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2208,
+        448
+      ],
+      "id": "05fe5b63-f821-42ca-94e0-0caf6f46edc9",
+      "name": "Responder actualizar"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cfaaeedc-c71a-4a34-8e90-32b7aa894047",
+              "leftValue": "={{ $json.existe }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        896
+      ],
+      "id": "eb352f1c-8432-45ff-80d4-9d443f092346",
+      "name": "¿Existe para desactivar?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "usuario_id": "={{ $json.usuario_id }}",
+            "fecha_actualizacion": "={{ $json.ahora }}",
+            "estado": "INACTIVO"
+          },
+          "matchingColumns": [
+            "usuario_id"
+          ],
+          "schema": [
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_normalizado",
+              "displayName": "email_normalizado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "password_hash",
+              "displayName": "password_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "password_salt",
+              "displayName": "password_salt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_registro",
+              "displayName": "fecha_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_actualizacion",
+              "displayName": "fecha_actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1056,
+        864
+      ],
+      "id": "ca288743-9616-4f5c-a2d4-bd874bcb23e7",
+      "name": "Desactivar usuario",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1459600593,
+          "mode": "list",
+          "cachedResultName": "Auditoria_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=1459600593"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "auditoria_id": "={{ 'AUD-' + Date.now() }}",
+            "usuario_id": "={{ $('¿Existe para desactivar?').first().json.usuario_id }}",
+            "accion": "DESACTIVAR",
+            "fecha": "={{ $('¿Existe para desactivar?').first().json.ahora }}",
+            "resultado": "OK",
+            "detalle": "Cuenta desactivada"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "auditoria_id",
+              "displayName": "auditoria_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accion",
+              "displayName": "accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "resultado",
+              "displayName": "resultado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        864
+      ],
+      "id": "80368b36-d8cb-41aa-9166-ac6096f32e69",
+      "name": "Auditoría desactivar",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"ok\": true, \"data\": { \"usuario_id\": $('¿Existe para desactivar?').first().json.usuario_id, \"estado\": \"INACTIVO\" } } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1504,
+        864
+      ],
+      "id": "4c4f39aa-a20e-4581-89d2-de119f01e596",
+      "name": "Responder desactivar"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=   {{ { \"ok\": false, \"error\": \"Usuario no encontrado\" } }}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1104,
+        1088
+      ],
+      "id": "b9746b31-b9cd-4009-9e72-e505a0c6d7d0",
+      "name": "Responder 404 desactivar"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng",
+          "mode": "list",
+          "cachedResultName": "EP02_Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        320
+      ],
+      "id": "c2c7dff8-4bc6-4831-97ae-d1ba8900241c",
+      "name": "Leer sesiones",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook Usuarios": [
+      {
+        "json": {
+          "body": {
+            "operacion": "perfil",
+            "usuario_id": "USR-0003",
+            "session_token": "972cc2c0dd039bdc08d191f4319aa7b465ca93010f6503a23cdf052495ef29f7"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook Usuarios": {
+      "main": [
+        [
+          {
+            "node": "Validar y normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer usuarios": {
+      "main": [
+        [
+          {
+            "node": "Leer sesiones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolver contexto": {
+      "main": [
+        [
+          {
+            "node": "¿Hay error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay error?": {
+      "main": [
+        [
+          {
+            "node": "Responder error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Según operación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Según operación": {
+      "main": [
+        [
+          {
+            "node": "¿Email ya existe?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Existe perfil?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Existe y activo?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Existe para desactivar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Email ya existe?": {
+      "main": [
+        [
+          {
+            "node": "Responder 409",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Hash y salt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hash y salt": {
+      "main": [
+        [
+          {
+            "node": "Crear usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear usuario": {
+      "main": [
+        [
+          {
+            "node": "Auditoría crear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auditoría crear": {
+      "main": [
+        [
+          {
+            "node": "Responder 201",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y normalizar": {
+      "main": [
+        [
+          {
+            "node": "Leer usuarios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Existe perfil?": {
+      "main": [
+        [
+          {
+            "node": "Responder perfil",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 404 perfil",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Existe y activo?": {
+      "main": [
+        [
+          {
+            "node": "Preparar actualización",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 404 actualizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar actualización": {
+      "main": [
+        [
+          {
+            "node": "Actualizar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar usuario": {
+      "main": [
+        [
+          {
+            "node": "Auditoría actualizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auditoría actualizar": {
+      "main": [
+        [
+          {
+            "node": "Responder actualizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Existe para desactivar?": {
+      "main": [
+        [
+          {
+            "node": "Desactivar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 404 desactivar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Desactivar usuario": {
+      "main": [
+        [
+          {
+            "node": "Auditoría desactivar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auditoría desactivar": {
+      "main": [
+        [
+          {
+            "node": "Responder desactivar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer sesiones": {
+      "main": [
+        [
+          {
+            "node": "Resolver contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f07cfc64-85df-4f22-9aec-0849ab30fb15",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fa10c907eb506ffd51d45e4ec51e1a79c1b35114398a835bce6a71ade8570941"
+  },
+  "nodeGroups": [],
+  "id": "uj9TRwIkqZTmISQQ",
+  "tags": []
+}

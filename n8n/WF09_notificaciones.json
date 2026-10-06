@@ -1,0 +1,459 @@
+{
+  "name": "WF09_notificaciones",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "usuario_id"
+            },
+            {
+              "name": "tipo"
+            },
+            {
+              "name": "titulo"
+            },
+            {
+              "name": "mensaje"
+            },
+            {
+              "name": "evento_id"
+            },
+            {
+              "name": "inscripcion_id"
+            },
+            {
+              "name": "clave_idempotencia"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "349447ec-29ea-4637-a229-22b6e8a66bb3",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "usuario_id",
+              "lookupValue": "={{ $json.usuario_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2ffd070b-136b-443c-acc4-8f7a7741a39b",
+      "name": "Buscar usuario",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TRl34-ZFvmUI6ChRbIdr4UcxsKlCHmIq8BrzVInIDh8",
+          "mode": "list",
+          "cachedResultName": "EP03_Telegram",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TRl34-ZFvmUI6ChRbIdr4UcxsKlCHmIq8BrzVInIDh8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 898214290,
+          "mode": "list",
+          "cachedResultName": "Vinculaciones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TRl34-ZFvmUI6ChRbIdr4UcxsKlCHmIq8BrzVInIDh8/edit#gid=898214290"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "usuario_id",
+              "lookupValue": "={{ $('Buscar usuario').item.json.usuario_id }}"
+            },
+            {
+              "lookupColumn": "estado",
+              "lookupValue": "ACTIVA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        432,
+        0
+      ],
+      "id": "faefa47b-7f37-40cc-b231-f77ba911eb66",
+      "name": "Buscar vinculación",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Buscar usuario').item.json.email_normalizado }}",
+        "subject": "={{ $('When Executed by Another Workflow').item.json.titulo }}",
+        "message": "={{ $('When Executed by Another Workflow').item.json.mensaje }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        656,
+        0
+      ],
+      "id": "9e283e84-636d-4a47-a2db-b8c76c55edbc",
+      "name": "Enviar Gmail",
+      "webhookId": "ecc7d3f3-dbe4-4b53-9011-9c9fe8711793",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ExVBJTQY9YxthfV7",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Buscar vinculación').item.json.chat_id }}",
+        "text": "={{ $('When Executed by Another Workflow').item.json.titulo }}  {{ $('When Executed by Another Workflow').item.json.mensaje }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "50e1e7e7-5f5a-4df9-914e-78ce375c9777",
+      "name": "Enviar Telegram",
+      "webhookId": "058e5858-6b96-46e3-9231-975097f6346d",
+      "credentials": {
+        "telegramApi": {
+          "id": "G0i45TIYsQA84Z3p",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('When Executed by Another Workflow').first().json;\nconst gmail = $('Enviar Gmail').first().json;\nconst tg = $('Enviar Telegram').first().json;\nconst vinc = $('Buscar vinculación').first().json;\nconst tieneChat = !!vinc.chat_id;\n\nreturn [{\n  json: {\n    notificacion_id: 'NOT-' + Date.now(),\n    usuario_id: base.usuario_id,\n    tipo: base.tipo,\n    titulo: base.titulo,\n    mensaje: base.mensaje,\n    evento_id: base.evento_id,\n    inscripcion_id: base.inscripcion_id,\n    fecha: new Date().toISOString(),\n    gmail_estado: gmail.error ? 'ERROR' : 'ENVIADO',\n    telegram_estado: !tieneChat ? 'NO_APLICA' : (tg.error ? 'ERROR' : 'ENVIADO'),\n    gmail_error: gmail.error ? String(gmail.error).slice(0, 300) : '',\n    telegram_error: tg.error ? String(tg.error).slice(0, 300) : '',\n    clave_idempotencia: base.clave_idempotencia\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        0
+      ],
+      "id": "2776d5a1-ac9c-47e0-b5e6-0f2453698fac",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Ilwaf6Wh28zSurvXOelaU5if1h6gAq4tyvyyt5AcA-g",
+          "mode": "list",
+          "cachedResultName": "EP09_Notificaciones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ilwaf6Wh28zSurvXOelaU5if1h6gAq4tyvyyt5AcA-g/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Notificaciones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Ilwaf6Wh28zSurvXOelaU5if1h6gAq4tyvyyt5AcA-g/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "notificacion_id",
+              "displayName": "notificacion_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tipo",
+              "displayName": "tipo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "titulo",
+              "displayName": "titulo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "evento_id",
+              "displayName": "evento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "inscripcion_id",
+              "displayName": "inscripcion_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_estado",
+              "displayName": "gmail_estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "telegram_estado",
+              "displayName": "telegram_estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "gmail_error",
+              "displayName": "gmail_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "telegram_error",
+              "displayName": "telegram_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "clave_idempotencia",
+              "displayName": "clave_idempotencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1328,
+        0
+      ],
+      "id": "35f12682-e8e3-41ce-81e4-7152cc1135f3",
+      "name": "Registrar notificación",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "usuario_id": "USR-0002",
+          "tipo": "PRUEBA",
+          "titulo": "Notificación de prueba",
+          "mensaje": "Este es un mensaje de prueba de EventPass",
+          "evento_id": "EVT-001",
+          "inscripcion_id": "INS-T01",
+          "clave_idempotencia": "USR-0002_EVT-001_PRUEBA"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Buscar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar usuario": {
+      "main": [
+        [
+          {
+            "node": "Buscar vinculación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar vinculación": {
+      "main": [
+        [
+          {
+            "node": "Enviar Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Gmail": {
+      "main": [
+        [
+          {
+            "node": "Enviar Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Telegram": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Registrar notificación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5705b52d-948e-40ca-bbcc-6e4acdaa451d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fa10c907eb506ffd51d45e4ec51e1a79c1b35114398a835bce6a71ade8570941"
+  },
+  "nodeGroups": [],
+  "id": "bMms2Uj0eZF7k8PN",
+  "tags": []
+}

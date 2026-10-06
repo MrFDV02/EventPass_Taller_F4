@@ -1,0 +1,1586 @@
+{
+  "name": "WF04 Eventos CRUD",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Administración de eventos",
+        "formDescription": "Crear, consultar, actualizar o cancelar eventos",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "accion",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "CREAR"
+                  },
+                  {
+                    "option": "CONSULTAR"
+                  },
+                  {
+                    "option": "ACTUALIZAR"
+                  },
+                  {
+                    "option": "CANCELAR"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e7d7ea52-c36a-4556-9ee0-53b95138c944",
+      "name": "On form submission",
+      "webhookId": "6485aa54-275c-4785-a263-02a7c94d3160"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "=CREAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "73145a91-c6a5-4d9c-bbc1-6be80abbed9b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "crear"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d694ab81-9573-4783-ae10-c4d73087143d",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "CONSULTAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "consultar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8779985b-8e32-4fac-87c8-204dff24aa3b",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "ACTUALIZAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "actualizar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7eb501f2-40ef-4bf3-81a8-894c121dca2c",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "CANCELAR",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cancelar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        0
+      ],
+      "id": "788d644e-57f8-474b-8f27-7285e47281c9",
+      "name": "Según acción"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "nombre",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "categoria",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Tecnología"
+                  },
+                  {
+                    "option": "Educación"
+                  },
+                  {
+                    "option": "Networking"
+                  },
+                  {
+                    "option": "Cultura"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "descripcion",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "fecha",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "hora",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "lugar",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "capacidad",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "imagen_url"
+            },
+            {
+              "fieldLabel": "organizador",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "estado",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "BORRADOR"
+                  },
+                  {
+                    "option": "PUBLICADO"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "Crear evento"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        464,
+        -624
+      ],
+      "id": "f97da642-0a92-4cf7-b174-f6af848eed73",
+      "name": "Formulario crear",
+      "webhookId": "c2ed968c-ebf2-4465-9fa8-b225b1240095"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4",
+          "mode": "list",
+          "cachedResultName": "EP04_Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        -624
+      ],
+      "id": "47e483d9-a59f-40ae-8af6-1e342f42272e",
+      "name": "Leer eventos crear",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const f = $('Formulario crear').first().json;\nconst filas = $input.all().map(i => i.json);\n\nconst nombre = String(f.nombre || '').trim();\nconst categoria = String(f.categoria || '').trim();\nconst descripcion = String(f.descripcion || '').trim();\nconst fecha = String(f.fecha || '').trim();\nconst hora = String(f.hora || '').trim();\nconst lugar = String(f.lugar || '').trim();\nconst capacidad = Number(f.capacidad);\nconst imagen_url = String(f.imagen_url || '').trim();\nconst organizador = String(f.organizador || '').trim();\nconst estado = String(f.estado || '').trim();\n\nconst errores = [];\nif (!nombre) errores.push('nombre_requerido');\nif (!['Tecnología', 'Educación', 'Networking', 'Cultura'].includes(categoria)) errores.push('categoria_invalida');\nif (!descripcion) errores.push('descripcion_requerida');\nif (!/^\\d{4}-\\d{2}-\\d{2}$/.test(fecha)) errores.push('fecha_invalida');\nif (!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(hora)) errores.push('hora_invalida');\nif (!lugar) errores.push('lugar_requerido');\nif (!Number.isInteger(capacidad) || capacidad <= 0) errores.push('capacidad_invalida');\nif (!organizador) errores.push('organizador_requerido');\nif (!['BORRADOR', 'PUBLICADO'].includes(estado)) errores.push('estado_invalido');\n\nlet max = 0;\nfor (const r of filas) {\n  const m = String(r.evento_id || '').match(/^EVT-(\\d+)$/);\n  if (m) max = Math.max(max, Number(m[1]));\n}\nconst evento_id = 'EVT-' + String(max + 1).padStart(3, '0');\nconst ahora = new Date().toISOString();\n\nreturn [{ json: {\n  hay_error: errores.length > 0,\n  errores,\n  evento_id,\n  nombre,\n  categoria,\n  descripcion,\n  fecha,\n  hora,\n  lugar,\n  capacidad,\n  imagen_url,\n  organizador,\n  estado,\n  fecha_creacion: ahora,\n  fecha_actualizacion: ahora\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        -624
+      ],
+      "id": "502e5187-f984-4f24-a46d-4c9261750a2d",
+      "name": "Validar y preparar evento"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "040f4325-18cd-43b3-8e27-fd99293add5d",
+              "leftValue": false,
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1104,
+        -624
+      ],
+      "id": "00f3933b-d9fe-4eab-8d0c-e2084d9422ae",
+      "name": "¿Evento con errores?"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4",
+          "mode": "list",
+          "cachedResultName": "EP04_Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "evento_id": "={{ $json.evento_id }}",
+            "nombre": "={{ $json.nombre }}",
+            "categoria": "={{ $json.categoria }}",
+            "descripcion": "={{ $json.descripcion }}",
+            "fecha": "= {{ $json.fecha }}",
+            "hora": "={{ $json.hora }}",
+            "lugar": "={{ $json.lugar }}",
+            "capacidad": "={{ $json.capacidad }}",
+            "imagen_url": "={{ $json.imagen_url }}",
+            "organizador": "={{ $json.organizador }}",
+            "estado": "={{ $json.estado }}",
+            "fecha_creacion": "={{ $json.fecha_creacion }}",
+            "fecha_actualizacion": "={{ $json.fecha_actualizacion }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "evento_id",
+              "displayName": "evento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hora",
+              "displayName": "hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lugar",
+              "displayName": "lugar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "capacidad",
+              "displayName": "capacidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imagen_url",
+              "displayName": "imagen_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "organizador",
+              "displayName": "organizador",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_creacion",
+              "displayName": "fecha_creacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_actualizacion",
+              "displayName": "fecha_actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1360,
+        -512
+      ],
+      "id": "81bd74a4-999d-4024-a596-7580d9dd1290",
+      "name": "Guardar evento",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Evento creado",
+        "completionMessage": "El evento se creó correctamente.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1536,
+        -512
+      ],
+      "id": "5bf4580b-0b7a-4ea4-9756-09a2d7795034",
+      "name": "Fin creado",
+      "webhookId": "802245a2-2fb5-46e4-8bc8-ca09902a8237"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "No se pudo crear el evento",
+        "completionMessage": "={{ 'Revisa estos campos: ' + $json.errores.join(', ') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1360,
+        -704
+      ],
+      "id": "485a89a1-f092-4ba5-8b45-9d11b6e47ae2",
+      "name": "Fin error crear",
+      "webhookId": "024dc4e7-cbdf-477e-8f5a-d295f560d305"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "evento_id",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "Consultar evento"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        464,
+        -320
+      ],
+      "id": "8615ff63-45d0-4786-9a9d-804ad4f6d4e5",
+      "name": "Formulario consultar",
+      "webhookId": "41f3f92a-71c5-4400-aec4-e964e15ed11f"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4",
+          "mode": "list",
+          "cachedResultName": "EP04_Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        -320
+      ],
+      "id": "69e8de5b-045f-45ad-8bb8-4f2ea4e2889a",
+      "name": "Leer eventos consultar",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const id = String($('Formulario consultar').first().json.evento_id || '').trim().toUpperCase();\nconst filas = $input.all().map(i => i.json);\nconst e = filas.find(f => String(f.evento_id || '').toUpperCase() === id);\n\nif (!e) {\n  return [{ json: { mensaje: 'No existe un evento con el ID ' + id } }];\n}\n\nconst mensaje = [\n  e.evento_id + ' - ' + e.nombre,\n  'Categoría: ' + e.categoria,\n  'Fecha: ' + e.fecha + ' ' + e.hora,\n  'Lugar: ' + e.lugar,\n  'Capacidad: ' + e.capacidad,\n  'Organizador: ' + e.organizador,\n  'Estado: ' + e.estado\n].join(' | ');\n\nreturn [{ json: { mensaje } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -320
+      ],
+      "id": "83e31227-66c2-4a6e-aa04-c4ebb08e0771",
+      "name": "Armar consulta"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Detalle del evento",
+        "completionMessage": "={{ $json.mensaje }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1104,
+        -320
+      ],
+      "id": "e42656b5-e2d8-477b-abad-23a5375db743",
+      "name": "Fin consultar",
+      "webhookId": "59be0c13-5c54-4afe-bad4-9efeb16e8061"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "evento_id",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "nombre"
+            },
+            {
+              "fieldLabel": "descripcion",
+              "fieldType": "textarea"
+            },
+            {
+              "fieldLabel": "fecha",
+              "fieldType": "date"
+            },
+            {
+              "fieldLabel": "hora"
+            },
+            {
+              "fieldLabel": "lugar"
+            },
+            {
+              "fieldLabel": "capacidad",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "estado",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "BORRADOR"
+                  },
+                  {
+                    "option": "PUBLICADO"
+                  },
+                  {
+                    "option": "CERRADO"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        608,
+        -32
+      ],
+      "id": "3652c98b-70fe-423c-b227-ff599cc33c97",
+      "name": "Formulario actualizar",
+      "webhookId": "bb546355-91f5-41c0-9f95-6ddc418ed6ca"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4",
+          "mode": "list",
+          "cachedResultName": "EP04_Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        864,
+        -32
+      ],
+      "id": "5c60e0d8-4247-4669-aa7e-bf7186840edb",
+      "name": "Leer eventos actualizar",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const f = $('Formulario actualizar').first().json;\nconst filas = $('Leer eventos actualizar').all().map(i => i.json);\nconst id = String(f.evento_id || '').trim().toUpperCase();\nconst e = filas.find(r => String(r.evento_id).trim().toUpperCase() === id);\n\nif (!e) {\n  return [{ json: { hay_error: true, errores: ['evento_no_encontrado'], evento_id: id } }];\n}\n\nconst vacio = v => v === undefined || v === null || String(v).trim() === '';\nconst val = (nuevo, actual) => vacio(nuevo) ? actual : String(nuevo).trim();\n\nconst nombre = val(f.nombre, e.nombre);\nconst categoria = val(f.categoria, e.categoria);\nconst descripcion = val(f.descripcion, e.descripcion);\nconst fecha = val(f.fecha, e.fecha);\nconst hora = val(f.hora, e.hora);\nconst lugar = val(f.lugar, e.lugar);\nconst capacidad = (vacio(f.capacidad) || Number(f.capacidad) === 0) ? Number(e.capacidad) : Number(f.capacidad);\nconst imagen_url = val(f.imagen_url, e.imagen_url);\nconst organizador = val(f.organizador, e.organizador);\nconst estado = val(f.estado, e.estado);\n\nconst errores = [];\nif (!/^\\d{4}-\\d{2}-\\d{2}$/.test(fecha)) errores.push('fecha_invalida');\nif (!/^([01]?\\d|2[0-3]):[0-5]\\d$/.test(hora)) errores.push('hora_invalida');\nif (!Number.isInteger(capacidad) || capacidad <= 0) errores.push('capacidad_invalida');\nif (!['BORRADOR', 'PUBLICADO', 'CERRADO'].includes(estado) && estado !== e.estado) errores.push('estado_invalido');\n\nreturn [{ json: {\n  hay_error: errores.length > 0,\n  errores,\n  evento_id: e.evento_id,\n  nombre,\n  categoria,\n  descripcion,\n  fecha,\n  hora,\n  lugar,\n  capacidad,\n  imagen_url,\n  organizador,\n  estado,\n  fecha_actualizacion: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -32
+      ],
+      "id": "0afb8f78-ac53-4949-8ed0-c75bea6d2479",
+      "name": "Validar actualización"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e223b5fa-12fe-4d8f-81a3-0bf02ba02202",
+              "leftValue": "={{ $json.hay_error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1312,
+        -32
+      ],
+      "id": "8fc7dfd8-13f0-41dd-a164-ab701f5873fb",
+      "name": "¿Actualización con errores?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4",
+          "mode": "list",
+          "cachedResultName": "EP04_Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "evento_id": "={{ $json.evento_id }}",
+            "nombre": "={{ $json.nombre }}",
+            "categoria": "={{ $json.categoria }}",
+            "descripcion": "={{ $json.descripcion }}",
+            "fecha": "={{ $json.fecha }}",
+            "hora": "={{ $json.hora }}",
+            "lugar": "= {{ $json.lugar }}",
+            "capacidad": "={{ $json.capacidad }}",
+            "estado": "={{ $json.estado }}",
+            "fecha_actualizacion": "={{ $json.fecha_actualizacion }}",
+            "imagen_url": "={{ $json.imagen_url }}",
+            "organizador": "={{ $json.organizador }}"
+          },
+          "matchingColumns": [
+            "evento_id"
+          ],
+          "schema": [
+            {
+              "id": "evento_id",
+              "displayName": "evento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hora",
+              "displayName": "hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lugar",
+              "displayName": "lugar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "capacidad",
+              "displayName": "capacidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imagen_url",
+              "displayName": "imagen_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "organizador",
+              "displayName": "organizador",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_creacion",
+              "displayName": "fecha_creacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_actualizacion",
+              "displayName": "fecha_actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        64
+      ],
+      "id": "acfe183b-0f18-4c2e-b66e-b377684dc09e",
+      "name": "Guardar actualización",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Evento actualizado",
+        "completionMessage": "={{ 'El evento ' + $('Validar actualización').first().json.evento_id + ' se actualizó correctamente.' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1760,
+        64
+      ],
+      "id": "0ecf1ac7-1d60-47e3-8362-ea6f7ea6a0dd",
+      "name": "Fin actualizado",
+      "webhookId": "78dbbe10-6a42-4adf-aa44-b073f558ec4b"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "No se pudo actualizar el evento",
+        "completionMessage": "=   {{ Array.isArray($json.errores) && $json.errores.length ? 'Revisa: ' + $json.errores.join(', ') : 'Revisa los datos del formulario e inténtalo de nuevo.' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1536,
+        -128
+      ],
+      "id": "aae3fdf9-1448-41e9-a8df-5fbf9f7bce8d",
+      "name": "Fin error actualizar",
+      "webhookId": "7bc44ceb-9028-405c-9bf3-2fa955d4194c"
+    },
+    {
+      "parameters": {
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "evento_id",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "formTitle": "Cancelar evento"
+        }
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        608,
+        384
+      ],
+      "id": "fdf8ac94-00c0-4f62-8233-2900b0bae08e",
+      "name": "Formulario cancelar",
+      "webhookId": "151e16b7-d533-4ffd-98fc-24c35db87783"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4",
+          "mode": "list",
+          "cachedResultName": "EP04_Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        384
+      ],
+      "id": "605b3c23-8cd3-4a34-a993-08b0cc40be74",
+      "name": "Leer eventos cancelar",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const id = String($('Formulario cancelar').first().json.evento_id || '').trim().toUpperCase();\nconst filas = $input.all().map(i => i.json);\nconst e = filas.find(r => String(r.evento_id || '').toUpperCase() === id);\n\nif (!e) {\n  return [{ json: { hay_error: true, errores: ['evento_no_existe'] } }];\n}\nif (e.estado === 'CANCELADO') {\n  return [{ json: { hay_error: true, errores: ['evento_ya_cancelado'] } }];\n}\n\nreturn [{ json: {\n  hay_error: false,\n  errores: [],\n  evento_id: e.evento_id,\n  estado: 'CANCELADO',\n  fecha_actualizacion: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        384
+      ],
+      "id": "2b58cca8-f18d-437e-bbfc-e3f40a889769",
+      "name": "Validar cancelación"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "10307e4c-126b-4b17-af3e-22b702cc8573",
+              "leftValue": "={{ $json.hay_error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1280,
+        384
+      ],
+      "id": "c3bfe94b-e692-485d-9163-161c2b9ae7bd",
+      "name": "¿Cancelación con errores?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4",
+          "mode": "list",
+          "cachedResultName": "EP04_Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Eventos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17s54Dnnlaxl7uxcg9iWRNIvPYhxOzos1p7mEoeeivl4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "evento_id": "={{ $json.evento_id }}",
+            "estado": "={{ $json.estado }}",
+            "fecha_actualizacion": "={{ $json.fecha_actualizacion }}"
+          },
+          "matchingColumns": [
+            "evento_id"
+          ],
+          "schema": [
+            {
+              "id": "evento_id",
+              "displayName": "evento_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "categoria",
+              "displayName": "categoria",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descripcion",
+              "displayName": "descripcion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hora",
+              "displayName": "hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lugar",
+              "displayName": "lugar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "capacidad",
+              "displayName": "capacidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "imagen_url",
+              "displayName": "imagen_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "organizador",
+              "displayName": "organizador",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_creacion",
+              "displayName": "fecha_creacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_actualizacion",
+              "displayName": "fecha_actualizacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1504,
+        480
+      ],
+      "id": "e50d2f62-6fed-4974-800f-d54d407e3ad5",
+      "name": "Guardar cancelación",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Evento cancelado",
+        "completionMessage": "={{ 'El evento ' + $json.evento_id + ' fue cancelado.' }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1728,
+        480
+      ],
+      "id": "43ccc2ab-5d39-4589-bf83-91cfd755f05a",
+      "name": "Fin cancelado",
+      "webhookId": "74728810-2877-4040-afb3-8908fd4a67c1"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "No se pudo cancelar el evento",
+        "completionMessage": "={{ 'Revisa: ' + $json.errores.join(', ') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1504,
+        288
+      ],
+      "id": "f91f45be-bd3b-4cee-b5be-8781f876acdf",
+      "name": "Fin error cancelar",
+      "webhookId": "1bd7a84c-5c00-4aec-9ce7-250a445d3689"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Según acción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Según acción": {
+      "main": [
+        [
+          {
+            "node": "Formulario crear",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formulario consultar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formulario actualizar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formulario cancelar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formulario crear": {
+      "main": [
+        [
+          {
+            "node": "Leer eventos crear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer eventos crear": {
+      "main": [
+        [
+          {
+            "node": "Validar y preparar evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y preparar evento": {
+      "main": [
+        [
+          {
+            "node": "¿Evento con errores?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Evento con errores?": {
+      "main": [
+        [
+          {
+            "node": "Fin error crear",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar evento": {
+      "main": [
+        [
+          {
+            "node": "Fin creado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formulario consultar": {
+      "main": [
+        [
+          {
+            "node": "Leer eventos consultar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer eventos consultar": {
+      "main": [
+        [
+          {
+            "node": "Armar consulta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar consulta": {
+      "main": [
+        [
+          {
+            "node": "Fin consultar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formulario actualizar": {
+      "main": [
+        [
+          {
+            "node": "Leer eventos actualizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer eventos actualizar": {
+      "main": [
+        [
+          {
+            "node": "Validar actualización",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar actualización": {
+      "main": [
+        [
+          {
+            "node": "¿Actualización con errores?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Actualización con errores?": {
+      "main": [
+        [
+          {
+            "node": "Fin error actualizar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar actualización",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar actualización": {
+      "main": [
+        [
+          {
+            "node": "Fin actualizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formulario cancelar": {
+      "main": [
+        [
+          {
+            "node": "Leer eventos cancelar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer eventos cancelar": {
+      "main": [
+        [
+          {
+            "node": "Validar cancelación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar cancelación": {
+      "main": [
+        [
+          {
+            "node": "¿Cancelación con errores?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Cancelación con errores?": {
+      "main": [
+        [
+          {
+            "node": "Fin error cancelar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar cancelación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar cancelación": {
+      "main": [
+        [
+          {
+            "node": "Fin cancelado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4f128f9a-1f9e-4c05-9597-3a5b6c987a81",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fa10c907eb506ffd51d45e4ec51e1a79c1b35114398a835bce6a71ade8570941"
+  },
+  "nodeGroups": [],
+  "id": "Y2ryKjn3uSsSaOgZ",
+  "tags": []
+}

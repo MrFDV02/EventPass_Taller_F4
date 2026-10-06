@@ -1,0 +1,1502 @@
+{
+  "name": "WF02 Auth y sesiones",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "eventpass/auth",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://event-pass-taller-f4.vercel.app"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "75931de8-c7e2-4941-9dfc-848a3a531b53",
+      "name": "Webhook Auth",
+      "webhookId": "7e2886fd-749a-41a9-8896-6700b020af7c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nconst operacion = String(body.operacion || '').trim().toLowerCase();\nconst email = String(body.email || '').trim().toLowerCase();\nconst password = String(body.password || '');\nconst session_token = String(body.session_token || '').trim();\n\nconst errores = [];\nif (!['login', 'logout', 'validar'].includes(operacion)) {\n  errores.push('operacion invalida (login, logout o validar)');\n}\nif (operacion === 'login') {\n  if (!email) errores.push('email es obligatorio');\n  if (!password) errores.push('password es obligatorio');\n}\nif (['logout', 'validar'].includes(operacion) && !session_token) {\n  errores.push('session_token es obligatorio');\n}\n\nreturn [{ json: { operacion, email, password, session_token, errores, hay_error: errores.length > 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "cc1b64d5-645b-4fc1-9f8d-a79c6d6aaea6",
+      "name": "Validar y normalizar"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1af57e88-3bec-483e-8c2a-1a298b28e5ab",
+              "leftValue": "={{ $json.hay_error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "906529c9-f462-4fb6-bf67-da1bab3a02db",
+      "name": "¿Hay error?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, errores: $json.errores }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "7cb65513-9d91-4254-85ee-aaeed83908c3",
+      "name": "Responder error"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.operacion }}",
+                    "rightValue": "login",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6a39e5cf-b880-4b2c-ba59-2ebb66438766"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "login"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5a92da8f-b692-4485-94d4-2359db90b9c0",
+                    "leftValue": "={{ $json.operacion }}",
+                    "rightValue": "logout",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "logout"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "024742cb-a7bd-44b8-97ff-148bbc8257c6",
+                    "leftValue": "={{ $json.operacion }}",
+                    "rightValue": "validar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "validar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        128
+      ],
+      "id": "1714e98e-019b-4c0e-80c1-a253e8f99fa9",
+      "name": "Según operación"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        896,
+        -16
+      ],
+      "id": "e1a35377-f2d2-4913-a0fd-d4be3c3432b7",
+      "name": "Leer usuarios",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst entrada = $('Validar y normalizar').first().json;\nconst filas = $input.all().map(i => i.json);\n\nconst u = filas.find(f => String(f.email_normalizado || '').toLowerCase() === entrada.email);\n\nlet motivo = null;\nlet login_ok = false;\n\nif (!u) {\n  motivo = 'credenciales_invalidas';\n} else if (String(u.estado).toUpperCase() !== 'ACTIVO') {\n  motivo = 'usuario_inactivo';\n} else {\n  const hash = crypto.pbkdf2Sync(String(entrada.password), String(u.password_salt), 100000, 64, 'sha512').toString('hex');\n  const a = Buffer.from(hash, 'hex');\n  const b = Buffer.from(String(u.password_hash), 'hex');\n  login_ok = a.length === b.length && crypto.timingSafeEqual(a, b);\n  if (!login_ok) motivo = 'credenciales_invalidas';\n}\n\nreturn [{ json: {\n  login_ok,\n  motivo,\n  usuario_id: u ? u.usuario_id : null,\n  nombre: u ? u.nombre : null,\n  email: entrada.email\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "9e9fe1e3-4d28-4037-a698-cbf53cd0a6fa",
+      "name": "Verificar password"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "113cf740-6a2c-4c19-8835-8588b5ef8e19",
+              "leftValue": "={{ $json.login_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        -16
+      ],
+      "id": "42228b3f-0826-4a2a-9e28-73edf96adebd",
+      "name": "¿Login válido?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: $json.motivo }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        80
+      ],
+      "id": "7b46d0a0-5fe0-4ac5-be72-a845f401a08a",
+      "name": "Responder 401"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst d = $input.first().json;\n\nconst ahora = new Date();\nconst expira = new Date(ahora.getTime() + 2 * 60 * 60 * 1000); // 2 horas\n\nreturn [{ json: {\n  session_id: 'SES-' + crypto.randomBytes(6).toString('hex').toUpperCase(),\n  usuario_id: d.usuario_id,\n  nombre: d.nombre,\n  email: d.email,\n  session_token: crypto.randomBytes(32).toString('hex'),\n  creada_en: ahora.toISOString(),\n  expira_en: expira.toISOString(),\n  estado: 'ACTIVA',\n  cerrada_en: '',\n  ultima_validacion: ahora.toISOString()\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -112
+      ],
+      "id": "14668c6b-6d6c-4e14-8035-e5778a829c3f",
+      "name": "Generar sesión"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng",
+          "mode": "list",
+          "cachedResultName": "EP02_Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.session_id }}",
+            "usuario_id": "={{ $json.usuario_id }}",
+            "session_token": "={{ $json.session_token }}",
+            "creada_en": "={{ $json.creada_en }}",
+            "expira_en": "={{ $json.expira_en }}",
+            "estado": "={{ $json.estado }}",
+            "ultima_validacion": "={{ $json.ultima_validacion }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "session_token",
+              "displayName": "session_token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creada_en",
+              "displayName": "creada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expira_en",
+              "displayName": "expira_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cerrada_en",
+              "displayName": "cerrada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ultima_validacion",
+              "displayName": "ultima_validacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1792,
+        -112
+      ],
+      "id": "00dafa7f-614a-4f2c-8d4f-e61707407053",
+      "name": "Registrar sesión",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, session_token: $('Generar sesión').first().json.session_token, expira_en: $('Generar sesión').first().json.expira_en, usuario_id: $('Generar sesión').first().json.usuario_id, nombre: $('Generar sesión').first().json.nombre }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2016,
+        -112
+      ],
+      "id": "c5eef2e8-ce19-4636-a047-4379849b65ad",
+      "name": "Responder login"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng",
+          "mode": "list",
+          "cachedResultName": "EP02_Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        976,
+        176
+      ],
+      "id": "e9285628-896e-4bda-addd-d0853a2683a4",
+      "name": "Leer sesiones logout",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const entrada = $('Validar y normalizar').first().json;\nconst filas = $input.all().map(i => i.json);\n\nconst s = filas.find(f => String(f.session_token || '') === entrada.session_token);\n\nlet motivo = null;\nif (!s) {\n  motivo = 'sesion_no_existe';\n} else if (String(s.estado).toUpperCase() === 'CERRADA') {\n  motivo = 'sesion_cerrada';\n}\n\nreturn [{ json: {\n  puede_cerrar: motivo === null,\n  motivo,\n  session_id: s ? s.session_id : null,\n  cerrada_en: new Date().toISOString()\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        336
+      ],
+      "id": "c0a114af-b337-41a4-a789-c63e78c0f317",
+      "name": "Resolver logout"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "11b6862d-ef66-4f4c-a7b5-58015342b2b0",
+              "leftValue": "={{ $json.puede_cerrar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1392,
+        336
+      ],
+      "id": "ed4b31d4-c20c-4bfa-b6d5-a631f94fc864",
+      "name": "¿Puede cerrar?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: $json.motivo }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1728,
+        416
+      ],
+      "id": "9f9f45b7-e959-4e44-9b3b-54a18360018f",
+      "name": "Responder error logout"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng",
+          "mode": "list",
+          "cachedResultName": "EP02_Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.session_id }}",
+            "estado": "=CERRADA",
+            "cerrada_en": "={{ $json.cerrada_en }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "session_token",
+              "displayName": "session_token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creada_en",
+              "displayName": "creada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expira_en",
+              "displayName": "expira_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cerrada_en",
+              "displayName": "cerrada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ultima_validacion",
+              "displayName": "ultima_validacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1616,
+        240
+      ],
+      "id": "4fd952bb-198f-4f3a-9fef-4cd23fc45431",
+      "name": "Cerrar sesión",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, mensaje: 'Sesion cerrada' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1840,
+        240
+      ],
+      "id": "d6313007-3e41-4aaf-8dde-bf83ed80826a",
+      "name": "Responder logout"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng",
+          "mode": "list",
+          "cachedResultName": "EP02_Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        256,
+        624
+      ],
+      "id": "3fc82ab9-3688-45fa-ad3a-ffda1de12540",
+      "name": "Leer sesiones validar.",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const token = $('Validar y normalizar').first().json.session_token;\nconst filas = $input.all().map(i => i.json);\nconst s = filas.find(f => f.session_token === token);\n\nif (!s) {\n  return [{ json: { valida: false, motivo: 'sesion_no_existe' } }];\n}\nif (s.estado === 'CERRADA') {\n  return [{ json: { valida: false, motivo: 'sesion_cerrada', session_id: s.session_id } }];\n}\nif (s.estado === 'EXPIRADA' || new Date(s.expira_en) <= new Date()) {\n  return [{ json: {\n    valida: false,\n    motivo: 'sesion_expirada',\n    session_id: s.session_id,\n    usuario_id: s.usuario_id,\n    marcar_expirada: s.estado !== 'EXPIRADA'\n  } }];\n}\nreturn [{ json: {\n  valida: true,\n  motivo: '',\n  session_id: s.session_id,\n  usuario_id: s.usuario_id,\n  expira_en: s.expira_en\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        624
+      ],
+      "id": "767130b4-9fed-4ccc-bf2f-7cd2f929cc64",
+      "name": "Resolver validar"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7aafa408-60b5-4782-8382-e10d84b3cd7e",
+              "leftValue": "={{ $json.valida }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        656,
+        624
+      ],
+      "id": "4a2bb0d8-6796-43f7-b9f8-8ad21d3800de",
+      "name": "¿Sesión válida?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e850be2f-13f8-43d3-abd7-4939d799c988",
+              "leftValue": "={{ $json.marcar_expirada === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        704,
+        944
+      ],
+      "id": "d49d3490-1e28-4727-bfaf-64dc36c9801c",
+      "name": "¿Marcar expirada?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng",
+          "mode": "list",
+          "cachedResultName": "EP02_Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.session_id }}",
+            "estado": "=EXPIRADA"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "session_token",
+              "displayName": "session_token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creada_en",
+              "displayName": "creada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expira_en",
+              "displayName": "expira_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cerrada_en",
+              "displayName": "cerrada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ultima_validacion",
+              "displayName": "ultima_validacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1152,
+        848
+      ],
+      "id": "959169bf-ecde-4040-af95-86cf4662eead",
+      "name": "Marcar expirada",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: $('Resolver validar').first().json.motivo }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1712,
+        960
+      ],
+      "id": "9b53b296-46a7-495d-845c-216bb43b61af",
+      "name": "Responder error validar"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc",
+          "mode": "list",
+          "cachedResultName": "EP01_Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Usuarios",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/17gggxTJlHueH-4jieayLY8HvWVJxqFKV8e4AOMc70nc/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        528
+      ],
+      "id": "8f39905e-ecc4-4c6b-a658-59b4f3751a7a",
+      "name": "Leer usuarios validar",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ses = $('Resolver validar').first().json;\nconst filas = $input.all().map(i => i.json);\nconst u = filas.find(f => f.usuario_id === ses.usuario_id);\n\nif (!u || u.estado !== 'ACTIVO') {\n  return [{ json: { usuario_ok: false, motivo: 'usuario_inactivo' } }];\n}\nreturn [{ json: {\n  usuario_ok: true,\n  motivo: '',\n  session_id: ses.session_id,\n  usuario_id: ses.usuario_id,\n  nombre: u.nombre,\n  expira_en: ses.expira_en\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        624
+      ],
+      "id": "c37fa683-e312-4534-aa36-11f65466d71f",
+      "name": "Verificar usuario"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d2597680-bf79-4c22-9f60-346d241ad2cd",
+              "leftValue": "={{ $json.usuario_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1216,
+        640
+      ],
+      "id": "7f9f1902-57f5-4aec-8e52-2ed83a424033",
+      "name": "¿Usuario activo?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: 'usuario_inactivo' }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1536,
+        768
+      ],
+      "id": "a875b748-42eb-4aa1-9bd8-33af85493f93",
+      "name": "Responder usuario inactivo"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng",
+          "mode": "list",
+          "cachedResultName": "EP02_Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sesiones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1E4l2KkEzjfOwE9ypOtwYCD3l5ylLk49PJrkfcJSjeng/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $json.session_id }}",
+            "ultima_validacion": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "session_id"
+          ],
+          "schema": [
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "session_token",
+              "displayName": "session_token",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creada_en",
+              "displayName": "creada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expira_en",
+              "displayName": "expira_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cerrada_en",
+              "displayName": "cerrada_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ultima_validacion",
+              "displayName": "ultima_validacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1392,
+        560
+      ],
+      "id": "826cd2c4-4c74-4a4c-8f64-6a6fdcd20c6d",
+      "name": "Actualizar validación",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pneOzUi3j5Q3tjgS",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, usuario_id: $('Verificar usuario').first().json.usuario_id, nombre: $('Verificar usuario').first().json.nombre, expira_en: $('Verificar usuario').first().json.expira_en }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1616,
+        592
+      ],
+      "id": "93c18901-d9a6-4280-bbb3-258f9e90368c",
+      "name": "Responder validar"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Auth": {
+      "main": [
+        [
+          {
+            "node": "Validar y normalizar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y normalizar": {
+      "main": [
+        [
+          {
+            "node": "¿Hay error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay error?": {
+      "main": [
+        [
+          {
+            "node": "Responder error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Según operación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Según operación": {
+      "main": [
+        [
+          {
+            "node": "Leer usuarios",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Leer sesiones logout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Leer sesiones validar.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer usuarios": {
+      "main": [
+        [
+          {
+            "node": "Verificar password",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar password": {
+      "main": [
+        [
+          {
+            "node": "¿Login válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Login válido?": {
+      "main": [
+        [
+          {
+            "node": "Generar sesión",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder 401",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar sesión": {
+      "main": [
+        [
+          {
+            "node": "Registrar sesión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar sesión": {
+      "main": [
+        [
+          {
+            "node": "Responder login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer sesiones logout": {
+      "main": [
+        [
+          {
+            "node": "Resolver logout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolver logout": {
+      "main": [
+        [
+          {
+            "node": "¿Puede cerrar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Puede cerrar?": {
+      "main": [
+        [
+          {
+            "node": "Cerrar sesión",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder error logout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cerrar sesión": {
+      "main": [
+        [
+          {
+            "node": "Responder logout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer sesiones validar.": {
+      "main": [
+        [
+          {
+            "node": "Resolver validar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolver validar": {
+      "main": [
+        [
+          {
+            "node": "¿Sesión válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Sesión válida?": {
+      "main": [
+        [
+          {
+            "node": "Leer usuarios validar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "¿Marcar expirada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Marcar expirada?": {
+      "main": [
+        [
+          {
+            "node": "Marcar expirada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder error validar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar expirada": {
+      "main": [
+        [
+          {
+            "node": "Responder error validar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer usuarios validar": {
+      "main": [
+        [
+          {
+            "node": "Verificar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar usuario": {
+      "main": [
+        [
+          {
+            "node": "¿Usuario activo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Usuario activo?": {
+      "main": [
+        [
+          {
+            "node": "Actualizar validación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder usuario inactivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar validación": {
+      "main": [
+        [
+          {
+            "node": "Responder validar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e5b9b2b2-5353-42bc-9ca0-4f30e6dad87b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fa10c907eb506ffd51d45e4ec51e1a79c1b35114398a835bce6a71ade8570941"
+  },
+  "nodeGroups": [],
+  "id": "CCuwXh2uvy1iZ2HB",
+  "tags": []
+}
