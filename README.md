@@ -3,7 +3,17 @@
 Plataforma de eventos de tecnología: catálogo público, registro y login de usuarios, inscripciones con lista de espera, notificaciones por correo y Telegram, y un asistente de IA informativo.
 
 - **App en producción:** https://event-pass-taller-f4.vercel.app
+- **Estudiante:** Nicolas Fandiño
 - **Repositorio:** https://github.com/MrFDV02/EventPass_Taller_F4
+
+## Tecnologías utilizadas
+
+- Vite y JavaScript vanilla (frontend), desplegado en Vercel
+- n8n en Docker, expuesto con ngrok
+- Google Sheets (persistencia)
+- Gmail y Telegram (notificaciones y vinculación)
+- Groq como modelo de IA, con `@n8n/chat` en el frontend
+- Git y GitHub
 
 ## Arquitectura
 
@@ -19,8 +29,8 @@ Plataforma de eventos de tecnología: catálogo público, registro y login de us
 |----|---------|---------|
 | WF01 | CRUD de usuarios (crear, perfil, actualizar, desactivar) | Webhook `POST /webhook/eventpass/usuarios` |
 | WF02 | Autenticación (login, logout, validar sesión) | Webhook `POST /webhook/eventpass/auth` |
-| WF03 | Vinculación de Telegram (código de vinculación) | Webhook `POST /webhook/eventpass/telegram/codigo` |
-| WF04 | CRUD de eventos | Webhook |
+| WF03 | Vinculación de Telegram (código y comando `/vincular`) | Webhook `POST /webhook/eventpass/telegram/codigo` y Telegram Trigger |
+| WF04 | CRUD de eventos (administración exclusiva desde n8n) | Form Trigger |
 | WF05 | Catálogo público (listado, detalle, filtro) | Webhook `POST /webhook/eventpass/catalogo` |
 | WF06 | CRUD de inscripciones (crear, consultar, actualizar, cancelar) | Webhook `POST /webhook/inscripciones` |
 | WF07 | Reasignación de cupos desde la lista de espera | Schedule Trigger |
@@ -68,8 +78,9 @@ CORS restringido al dominio de Vercel en todos los webhooks y en el Chat Trigger
 ## Estados
 
 - **Inscripciones:** `CONFIRMADA`, `LISTA_ESPERA`, `CANCELADA`.
-- **Eventos:** solo los `PUBLICADO` aceptan inscripciones; si no hay cupos, la inscripción entra en `LISTA_ESPERA`.
-- **Sesiones:** `ACTIVA` y `CERRADA`, con fecha de expiración.
+- **Usuarios:** `ACTIVO`, `INACTIVO` (borrado lógico).
+- **Eventos:** `BORRADOR`, `PUBLICADO`, `CERRADO`, `CANCELADO`. Solo los `PUBLICADO` aceptan inscripciones; si no hay cupos, la inscripción entra en `LISTA_ESPERA`.
+- **Sesiones:** `ACTIVA`, `CERRADA`, `EXPIRADA`.
 
 ## Hashing de contraseñas
 
@@ -105,7 +116,7 @@ Para recibir Telegram, el usuario vincula su cuenta desde el perfil con un códi
 
 ## Asistente IA y restricciones
 
-WF10 es un Chat Trigger con un AI Agent (modelo Groq) y memoria de conversación en EP10_Soporte.
+WF10 es un Chat Trigger con un AI Agent (modelo Groq). Cada conversación y cada mensaje (rol `USER` y `ASSISTANT`) se guardan en EP10_Soporte, así que una conversación completa se reconstruye filtrando por `conversation_id`.
 
 - Es **informativo**: solo tiene herramientas de lectura (Consultar eventos y Consultar inscripciones). No crea, modifica ni cancela nada.
 - Responde en español y en texto simple, sin tablas.
