@@ -4,6 +4,7 @@ import { renderAuth } from './pages/auth.js';
 import { renderPerfil } from './pages/perfil.js';
 import { renderEvento } from './pages/evento.js';
 import { renderInscripciones } from './pages/inscripciones.js';
+import { renderCheckin } from './pages/checkin.js';
 import { initChat } from './js/chat.js';
 import { haySesion, usuarioActual, limpiarSesion } from './js/session.js';
 import { logout, validarSesion } from './js/api.js';
@@ -16,6 +17,7 @@ function renderNav(ruta) {
   if (haySesion()) {
     nav.innerHTML = `
       <a href="#/" class="${ruta === '#/' ? 'active' : ''}">Eventos</a>
+      <a href="#/checkin" class="${ruta === '#/checkin' ? 'active' : ''}">Check-in</a>
       <a href="#/inscripciones">Mis inscripciones</a>
       <a href="#/perfil" class="user">${esc(usuarioActual().nombre)}</a>
       <button id="salir" class="link">Salir</button>`;
@@ -28,6 +30,7 @@ function renderNav(ruta) {
   } else {
     nav.innerHTML = `
       <a href="#/" class="${ruta === '#/' ? 'active' : ''}">Eventos</a>
+      <a href="#/checkin" class="${ruta === '#/checkin' ? 'active' : ''}">Check-in</a>
       <a href="#/login" class="${ruta === '#/login' ? 'active' : ''}">Iniciar sesión</a>
       <a href="#/registro" class="btn-sm">Crear cuenta</a>`;
   }
@@ -40,6 +43,7 @@ function route() {
   else if (ruta === '#/registro') renderAuth(app, 'registro');
   else if (ruta === '#/perfil') renderPerfil(app);
   else if (ruta === '#/inscripciones') renderInscripciones(app);
+  else if (ruta === '#/checkin') renderCheckin(app);
   else if (ruta.startsWith('#/evento/')) renderEvento(app, decodeURIComponent(ruta.split('/')[2]));
   else renderCatalogo(app);
 }

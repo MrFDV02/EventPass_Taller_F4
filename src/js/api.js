@@ -51,3 +51,17 @@ export const misInscripciones = (usuario_id) =>
 
 export const cancelarInscripcion = (usuario_id, inscripcion_id) =>
   api('inscripciones', { accion: 'CANCELAR', usuario_id, inscripcion_id });
+
+export async function registrarCheckin(inscripcion_id, evento_id) {
+  const res = await fetch(`${BASE_URL}/webhook/eventpass/checkin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
+    },
+    body: JSON.stringify({ inscripcion_id, evento_id }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!data) throw new Error(`Respuesta inválida (${res.status})`);
+  return data;
+}

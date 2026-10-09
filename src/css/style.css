@@ -363,3 +363,84 @@ main h1 { font-size: 2.6rem; font-weight: 800; margin: 8px 0 28px; }
 /* chat n8n: evitar que choque con estilos globales */
 #n8n-chat main { padding: 0; }
 #n8n-chat h1 { font-size: 1.3rem; margin: 0; }
+
+/* ===== Check-in ===== */
+.checkin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 520px;
+}
+.checkin-form label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+.checkin-form select,
+.checkin-form input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+}
+.checkin-form select option {
+  color: #000;
+}
+.checkin-form button {
+  margin-top: 6px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #19e6a0;
+  color: #04110c;
+  font-weight: 700;
+  cursor: pointer;
+}
+.checkin-form button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.checkin-result {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 520px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 0.95rem;
+}
+.checkin-result.checkin-ok,
+.checkin-result.checkin-warn,
+.checkin-result.checkin-error,
+.checkin-result.checkin-loading {
+  display: flex;
+}
+.checkin-result span {
+  opacity: 0.85;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+}
+.checkin-ok {
+  background: rgba(25, 230, 160, 0.1);
+  border-color: rgba(25, 230, 160, 0.5);
+  color: #19e6a0;
+}
+.checkin-warn {
+  background: rgba(255, 193, 7, 0.1);
+  border-color: rgba(255, 193, 7, 0.5);
+  color: #ffc107;
+}
+.checkin-error {
+  background: rgba(255, 82, 82, 0.1);
+  border-color: rgba(255, 82, 82, 0.5);
+  color: #ff6b6b;
+}
+.checkin-loading {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  font-family: 'JetBrains Mono', monospace;
+}
