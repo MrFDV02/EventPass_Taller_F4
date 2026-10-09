@@ -1,6 +1,6 @@
 # EventPass
 
-Plataforma de eventos de tecnología: catálogo público, registro y login de usuarios, inscripciones con lista de espera, notificaciones por correo y Telegram, y un asistente de IA informativo.
+Plataforma de eventos de tecnología: catálogo público, registro y login de usuarios, inscripciones con lista de espera, notificaciones por correo y Telegram, un asistente de IA informativo y check-in digital de asistentes.
 
 - **App en producción:** https://event-pass-taller-f4.vercel.app
 - **Estudiante:** Nicolas Fandiño
@@ -18,9 +18,9 @@ Plataforma de eventos de tecnología: catálogo público, registro y login de us
 ## Arquitectura
 
 - **Frontend:** Vite + JavaScript vanilla, desplegado en Vercel. Nunca accede a Google Sheets: solo llama a webhooks de n8n.
-- **Backend:** n8n (Docker) expuesto con ngrok. Toda la lógica de negocio vive en 10 workflows (WF01 a WF10).
-- **Persistencia:** Google Sheets, un archivo por workflow (EP01 a EP10).
-- **Notificaciones:** Gmail y Telegram (bot @MrfN8n_bot).
+- **Backend:** n8n (Docker) expuesto con ngrok. Toda la lógica de negocio vive en 11 workflows (WF01 a WF11).
+- **Persistencia:** Google Sheets, un archivo por workflow (EP01 a EP11).
+- **Notificaciones:** Gmail y Telegram (bot @MrfN8n_bot), centralizadas en WF09.
 - **Asistente IA:** Chat Trigger de n8n con AI Agent y Groq como modelo.
 
 ## Workflows y triggers
@@ -37,6 +37,7 @@ Plataforma de eventos de tecnología: catálogo público, registro y login de us
 | WF08 | Recordatorios de eventos próximos | Schedule Trigger |
 | WF09 | Notificaciones por Gmail y Telegram | When Executed by Another Workflow |
 | WF10 | Asistente IA informativo | Chat Trigger |
+| WF11 | Check-in digital de asistentes (extensión del examen) | Webhook `POST /webhook/eventpass/checkin` |
 
 Los workflows exportados están en la carpeta `n8n/`.
 
@@ -56,10 +57,11 @@ Un archivo por workflow. El frontend nunca los toca; solo n8n lee y escribe.
 | EP08_Recordatorios | WF08 | Recordatorios enviados (evita duplicados) |
 | EP09_Notificaciones | WF09 | Notificaciones enviadas por Gmail y Telegram |
 | EP10_Soporte | WF10 | Conversaciones y mensajes del asistente |
+| EP11_Checkin | WF11 | Intentos de check-in (hoja `Checkins`) con su resultado |
 
 ## Endpoints
 
-Todos son `POST` y se llaman sobre la URL base de n8n (`VITE_N8N_BASE_URL`). Salvo `crear`, `login` y el catálogo, requieren `session_token` en el body (el frontend lo agrega solo desde `localStorage`).
+Todos son `POST` y se llaman sobre la URL base de n8n (`VITE_N8N_BASE_URL`). Salvo `crear`, `login`, el catálogo y el check-in, requieren `session_token` en el body (el frontend lo agrega solo desde `localStorage`).
 
 | Endpoint | Campo | Valores |
 |----------|-------|---------|
@@ -68,6 +70,7 @@ Todos son `POST` y se llaman sobre la URL base de n8n (`VITE_N8N_BASE_URL`). Sal
 | `/webhook/eventpass/telegram/codigo` | solo `session_token` | genera el código de vinculación |
 | `/webhook/eventpass/catalogo` | consulta | listado, detalle (devuelve objeto) y filtro (devuelve lista) |
 | `/webhook/inscripciones` | `accion` | `CREAR`, `CONSULTAR`, `ACTUALIZAR`, `CANCELAR` |
+| `/webhook/eventpass/checkin` | `inscripcion_id`, `evento_id` | registra el ingreso de un asistente (WF11) |
 
 `validar` responde `{ ok: true, usuario_id, nombre, expira_en }`, o `{ ok: false, error }` con código 401 si la sesión no es válida.
 
@@ -77,10 +80,11 @@ CORS restringido al dominio de Vercel en todos los webhooks y en el Chat Trigger
 
 ## Estados
 
-- **Inscripciones:** `CONFIRMADA`, `LISTA_ESPERA`, `CANCELADA`.
+- **Inscripciones:** `CONFIRMADA`, `LISTA_ESPERA`, `CANCELADA`, `ASISTIO` (se asigna solo con un check-in exitoso).
 - **Usuarios:** `ACTIVO`, `INACTIVO` (borrado lógico).
 - **Eventos:** `BORRADOR`, `PUBLICADO`, `CERRADO`, `CANCELADO`. Solo los `PUBLICADO` aceptan inscripciones; si no hay cupos, la inscripción entra en `LISTA_ESPERA`.
 - **Sesiones:** `ACTIVA`, `CERRADA`, `EXPIRADA`.
+- **Check-in (resultado de cada intento):** `EXITOSO`, `RECHAZADO`, `DUPLICADO`.
 
 ## Hashing de contraseñas
 
@@ -97,6 +101,7 @@ Las contraseñas nunca se guardan en texto plano. WF01 las procesa con PBKDF2 (S
 
 - WF06 bloquea inscripciones duplicadas del mismo usuario al mismo evento.
 - WF08 registra cada recordatorio con la clave `usuario_evento_tipo`, así que una segunda ejecución no vuelve a enviarlo.
+- WF11 impide dos check-ins exitosos para la misma inscripción: un segundo intento se registra como `DUPLICADO`, no vuelve a modificar el estado y no notifica de nuevo.
 
 ## Lista de espera
 
@@ -111,6 +116,7 @@ WF09 recibe la orden desde otros workflows y envía el mensaje por Gmail y por T
 - WF06 notifica al crear y al cancelar una inscripción.
 - WF07 notifica cuando alguien pasa de `LISTA_ESPERA` a `CONFIRMADA`.
 - WF08 notifica los recordatorios de eventos próximos.
+- WF11 notifica cada check-in exitoso (tipo `CHECKIN`), reutilizando WF09 sin duplicar su lógica.
 
 Para recibir Telegram, el usuario vincula su cuenta desde el perfil con un código (WF03) enviado al bot @MrfN8n_bot.
 
@@ -121,6 +127,45 @@ WF10 es un Chat Trigger con un AI Agent (modelo Groq). Cada conversación y cada
 - Es **informativo**: solo tiene herramientas de lectura (Consultar eventos y Consultar inscripciones). No crea, modifica ni cancela nada.
 - Responde en español y en texto simple, sin tablas.
 - Se muestra en el frontend con `@n8n/chat`, en una ventana flotante.
+
+## Extensión del examen: WF11 — Check-in digital
+
+Control del ingreso real de asistentes a los eventos, construido sobre la arquitectura existente sin modificar el resto de workflows.
+
+- **Workflow:** `n8n/WF11_checkin_digital.json`
+- **Trigger:** Webhook, `POST /webhook/eventpass/checkin` (CORS restringido al dominio de Vercel)
+- **Persistencia:** archivo `EP11_Checkin`, hoja `Checkins` (`checkin_id`, `inscripcion_id`, `evento_id`, `usuario_id`, `fecha_checkin`, `resultado`, `detalle`)
+- **Entrada mínima:** `{ "inscripcion_id": "...", "evento_id": "..." }`
+- **Frontend:** pantalla `#/checkin` (`src/pages/checkin.js`), con selector de evento y campo de inscripción. Muestra estados de carga, éxito, duplicado y rechazado. No exige sesión: funciona como una puerta de entrada operada por el personal del evento.
+
+### Flujo
+
+1. Lee la inscripción (EP06), el evento (EP04) y el historial de check-ins de esa inscripción (EP11).
+2. Un nodo Code valida: que la inscripción exista, que el evento exista, que la inscripción corresponda al evento enviado, que su estado sea `CONFIRMADA` y que no exista un check-in exitoso previo.
+3. Registra **cada intento** en `Checkins`, con resultado `EXITOSO`, `RECHAZADO` o `DUPLICADO` y un detalle del motivo.
+4. Un Switch enruta según el resultado:
+   - `EXITOSO`: actualiza solo esa inscripción a `ASISTIO`, llama a WF09 (Gmail + Telegram) y responde 200.
+   - `DUPLICADO`: no modifica nada ni notifica; responde 409.
+   - `RECHAZADO`: no modifica nada ni notifica; responde 422 con el motivo.
+
+### Respuestas HTTP
+
+| Resultado | HTTP | Mensaje |
+|---|---|---|
+| EXITOSO | 200 | Check-in realizado correctamente. |
+| DUPLICADO | 409 | El ingreso ya había sido registrado. |
+| RECHAZADO | 422 | Inscripción inexistente, evento inexistente, inscripción de otro evento, o estado que no permite asistencia (`CANCELADA`, `LISTA_ESPERA`). |
+
+### Casos probados
+
+| Caso | Entrada | Resultado |
+|---|---|---|
+| Check-in válido | inscripción `CONFIRMADA` + evento correcto | `EXITOSO`, pasa a `ASISTIO` y notifica por Gmail y Telegram |
+| Duplicado | misma inscripción otra vez | `DUPLICADO` |
+| Inscripción no válida | inscripción `CANCELADA` | `RECHAZADO` |
+| Evento incorrecto | inscripción de EVT-002 enviada con EVT-001 | `RECHAZADO` |
+
+Los cuatro casos se probaron contra el webhook de producción y desde la pantalla `#/checkin` en Vercel.
 
 ## Variables de entorno
 
